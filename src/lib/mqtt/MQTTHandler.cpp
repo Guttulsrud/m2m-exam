@@ -1,9 +1,9 @@
 #include "MQTTHandler.h"
 
-int uniqueID = 71;
+int uniqueID = 80;
 
 String publishTopic = "boats/" + String(uniqueID); // Publish Topic
-String Subscribe = "boats";                        // Subscribe Topic
+String subscribeTopic = "boats/testing";           // Subscribe Topic
 
 String latitude;
 String longitude;
@@ -29,17 +29,19 @@ void MQTTHandler::init() {
 
   // SUBSCRIBE MESSAGE
   // Need to be executed once
-  Serial1.println("AT+CMQTTSUBTOPIC=0,32,1"); // AT Command for Setting up the
-  // Subscribe Topic Name
-  Serial1.print(char(26));
 
+  // AT Command for Setting up the Subscribe Topic Name
+
+  Serial1.println("AT+CMQTTSUBTOPIC=0," + String(subscribeTopic.length()) +
+                  ",1");
   delay(2000);
-  Serial1.println(Subscribe); // Topic Name
+  Serial1.println(subscribeTopic); // Topic Name
   delay(2000);
-  Serial1.println("AT+CMQTTSUB=0,4,32,1"); // Length of message
-  Serial1.print(char(26));
-  delay(20);
-  Serial1.print(char(26));
+  Serial1.println("AT+CMQTTSUB=0,4,1,1"); // Length of message
+  delay(2000);
+  Serial1.println("HAII"); // message
+  delay(2000);
+  Serial.println("Done");
 }
 
 void MQTTHandler::sendMQTT(String payload, String attribute) {

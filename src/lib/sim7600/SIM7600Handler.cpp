@@ -16,6 +16,8 @@ void SIM7600Handler::requestCoordinates() {
     MQTT.sendMQTT(String(parse_degrees(longitude)), "longitude");
   } else {
     activePositionSignal = false;
+    MQTT.sendMQTT("59.903900", "latitude");
+    MQTT.sendMQTT("10.737192", "longitude");
   }
 }
 
