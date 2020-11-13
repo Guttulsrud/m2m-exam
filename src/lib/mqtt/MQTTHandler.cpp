@@ -1,9 +1,9 @@
 #include "MQTTHandler.h"
 
-int uniqueID = 80;
+String uniqueID = String(80);
 
-String publishTopic = "boats/" + String(uniqueID); // Publish Topic
-String subscribeTopic = "boats/testing";           // Subscribe Topic
+String publishTopic = "boats/publish/" + uniqueID; // Publish Topic
+String subscribeTopic = "boats/subscribe/" + uniqueID;
 
 String latitude;
 String longitude;
@@ -23,7 +23,7 @@ void MQTTHandler::init() {
   Serial1.println("AT+CMQTTACCQ=0,\"01\"");
   // Client ID - change this for each client as this need to be unique
   delay(2000);
-  Serial1.println("AT+CMQTTCONNECT=0,\"tcp://test.mosquitto.org:1883\",90,1");
+  Serial1.println("AT+CMQTTCONNECT=0,\"tcp://mqtt.eclipse.org:1883\",90,1");
   // MQTT Server Name for connecting this client
   delay(2000);
 
