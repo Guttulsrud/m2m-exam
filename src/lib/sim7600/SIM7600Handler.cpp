@@ -50,7 +50,6 @@ void SIM7600Handler::init() {
   serial.send("AT+CGREG?");
   serial.send("AT+NETOPEN");
   serial.send("AT+IPADDR");
-  Serial1.print(char(26));
   MQTT.init();
 }
 

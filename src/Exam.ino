@@ -96,7 +96,7 @@ void handleSubscription() {
 // Er det strøm på batteriet?
 //
 
-void setUpTimers() { Alarm.timerRepeat(130, publishTelemetry); }
+void setUpTimers() { Alarm.timerRepeat(60, publishTelemetry); }
 
 int handleDashboardRequest(String command) {
 

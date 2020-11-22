@@ -24,7 +24,9 @@ void MQTTHandler::init() {
   serial.send("AT+CMQTTSUBTOPIC=0," + String(subscribeTopic.length()) + ",1");
   serial.send(subscribeTopic);        // Topic Name
   serial.send("AT+CMQTTSUB=0,4,1,1"); // Length of message
-  serial.send("HAII");
+  serial.send("BOAT");
+
+  publish("locked", "status");
 }
 
 void MQTTHandler::publish(String payload, String attribute) {
