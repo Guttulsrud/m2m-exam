@@ -1,23 +1,34 @@
 #include "SIM7600Handler.h"
 
-void SIM7600Handler::requestCoordinates() {
-  sendAndReadResponse("AT+CGPSINFO");
+String SIM7600Handler::getPosition() {
+  serial.send("AT+CGPSINFO");
+
+  char latitude[40];
+  char longitude[40];
+
+  String response = serial.response;
 
   if (response.substring(40, 51).length() > 2) {
-
-    char latitude[40];
-    char longitude[40];
-
     response.substring(25, 36).toCharArray(latitude, 40);
     response.substring(40, 51).toCharArray(longitude, 40);
+  }
+
+  String lat = String(parse_degrees(latitude));
+  String lng = String(parse_degrees(longitude));
+
+  String latit = lat.substring(0, 3) + "." + lat.substring(3);
+  // Serial.println(latit);
+
+  if (lat.length() > 6 && lng.length() > 6) {
+    MQTT.publish("false", "position/out_of_range");
 
     // Send new
-    MQTT.sendMQTT(String(parse_degrees(latitude)), "latitude");
-    MQTT.sendMQTT(String(parse_degrees(longitude)), "longitude");
+    return lat + ", " + lng;
+
   } else {
-    activePositionSignal = false;
-    MQTT.sendMQTT("59.903900", "latitude");
-    MQTT.sendMQTT("10.737192", "longitude");
+    MQTT.publish("true", "position/out_of_range");
+
+    return "59923159, 10753234";
   }
 }
 
@@ -30,80 +41,37 @@ void SIM7600Handler::init() {
   Serial1.begin(19200);
   delay(1000);
 
-  sendAndReadResponse("AT");
-  sendAndReadResponse("AT+CPIN=7043");
-  sendAndReadResponse("AT+CFUN=1");
-  sendAndReadResponse("AT+CGACT=1,1");
-  sendAndReadResponse("AT+CGDCONT=1,\"IP\",\"ice.net\"");
-  sendAndReadResponse("AT+CGPS=1");
-  sendAndReadResponse("AT+CGREG?");
-  sendAndReadResponse("AT+NETOPEN");
-  sendAndReadResponse("AT+IPADDR");
+  serial.send("AT");
+  serial.send("AT+CPIN=7043");
+  serial.send("AT+CFUN=1");
+  serial.send("AT+CGACT=1,1");
+  serial.send("AT+CGDCONT=1,\"IP\",\"ice.net\"");
+  serial.send("AT+CGPS=1");
+  serial.send("AT+CGREG?");
+  serial.send("AT+NETOPEN");
+  serial.send("AT+IPADDR");
   Serial1.print(char(26));
   MQTT.init();
 }
 
-void SIM7600Handler::sendAndReadResponse(
-    String command, int extraWaitInMillisecondsForResponse) {
-  // Send the command
-  Serial1.println(command);
-
-  response = "";
-
-  // Setup a timeout
-  int requestStartTime = millis();
-  int millisecondsSinceRequestStarted = 0;
-  bool wegotResponse = false;
-
-  // Wait until we get a response (or timeout)
-  while (!wegotResponse || millisecondsSinceRequestStarted < 2000) {
-    millisecondsSinceRequestStarted = millis() - requestStartTime;
-    if (Serial1.available() > 0) {
-      wegotResponse = true;
-    }
-  }
-
-  // Print out the results
-  if (millisecondsSinceRequestStarted < 2000) {
-    Serial.print("\nCommand: '");
-    Serial.print(command);
-    Serial.println(" timed out?\n");
-  } else if (Serial1.available() > 0) {
-    Serial.print("<\n");
-
-    // wait a little longer so we get the whole response
-    delay(extraWaitInMillisecondsForResponse);
-
-    // Print out the response to Serial monitor
-    while (Serial1.available()) {
-      char ch = Serial1.read();
-      if (ch) {
-        Serial.print(ch);
-
-        response += ch;
-      }
-    }
-    Serial.println("\n>");
-  }
-}
-
-long SIM7600Handler::parse_degrees(char *p) {
+long SIM7600Handler::parse_degrees(char *input) {
   char *minutes;
   char deg[] = {0, 0, 0,
                 0}; // up to 3 digits character  string for integer degrees
   double x;
   long d;
 
-  if (strlen(p) == 0)
+  if (strlen(input) == 0)
     return 0L; // invalid input string
 
-  if ((minutes = strchr(p, '.')) == NULL)
+  if ((minutes = strchr(input, '.')) == NULL)
     return 0L; //'.' not found, invalid
 
   minutes -=
       2; // back up pointer to include two digits of minutes+decimal fraction
-  x = strtod(minutes, NULL);   // make into double
-  memcpy(deg, p, minutes - p); // copy degrees, works OK with zero length string
+  x = strtod(minutes, NULL); // make into double
+  memcpy(deg, input,
+         minutes - input); // copy degrees, works OK with zero length string
   d = strtol(deg, NULL, 10) * 1000000UL; // degrees to long int
   d += (long)(x * 16666.667 + 0.5);      //*1.e6/60.  add in minutes
 

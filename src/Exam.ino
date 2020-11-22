@@ -1,65 +1,79 @@
 #include "TimeAlarms/TimeAlarms.h"
+#include "lib/boat/BoatHandler.h"
 #include "lib/mqtt/MQTTHandler.h"
 #include "lib/sim7600/SIM7600Handler.h"
 
 // Handlers
 SIM7600Handler SIM7600;
 MQTTHandler MQTT;
-
-int fuelLevelPercent;
-bool locked = true;
+BoatHandler boat;
 
 String securityToken = "abcd";
+String mqttPayload;
+bool mqttPayloadRecieved = false;
 
 void setup() {
 
-  pinMode(D2, OUTPUT);
-  pinMode(D1, INPUT);
   Serial.println("Starting...");
   Particle.function("dashboardrequest", handleDashboardRequest);
   Serial.begin(19200);
   setUpTimers();
 
+  boat.init();
   SIM7600.init();
 }
-String res = "";
 
-String mqttPayload = "";
-bool mqttPayloadRecieved = false;
-
-void gps() { SIM7600.requestCoordinates(); }
+void publishTelemetry() {
+  MQTT.publish(SIM7600.getPosition(), "position");
+  MQTT.publish(String(boat.getFuelLevel()), "fuel_level");
+}
 
 void loop() {
 
   if (Particle.connected()) {
     Alarm.delay(1); // Alarms need this to work lmao
 
-    handleMTTPayload();
+    handleSubscription();
 
-    if (Serial.available() > 0) {
-      Serial.print(">");
-      delay(100);
-      while (Serial.available()) {
-        char ch = Serial.read();
-        Serial.print(ch);
-        Serial1.print(ch);
-      }
-    }
     /*
-        if (Serial1.available() > 0) {
-          Serial.print(":");
-          delay(10);
-          while (Serial1.available()) {
-            char ch = Serial1.read();
-            if (ch) {
-            }
+        if (Serial.available() > 0) {
+          Serial.print(">");
+          delay(100);
+          while (Serial.available()) {
+            char ch = Serial.read();
+            Serial.print(ch);
+            Serial1.print(ch);
           }
-        }*/
-    readSerialString();
+        }
+
+
+            if (Serial1.available() > 0) {
+              Serial.print(":");
+              delay(10);
+              while (Serial1.available()) {
+                char ch = Serial1.read();
+                if (ch) {
+                  Serial.print(ch);
+                }
+              }
+            } */
   }
 }
 
-void readSerialString() {
+void handleSubscription() {
+  if (mqttPayloadRecieved) {
+    if (mqttPayload == "unlock") {
+      boat.unlockBoat();
+      MQTT.publish("unlocked", "status");
+    }
+
+    if (mqttPayload == "lock") {
+      boat.lockBoat();
+      MQTT.publish("locked", "status");
+    }
+    mqttPayloadRecieved = false;
+  }
+
   String a;
   // Receiving subscribe response
   while (Serial1.available() > 0) {
@@ -73,61 +87,21 @@ void readSerialString() {
       int new4 = new3.indexOf('\n');
       String new5 = new3.substring(0, new4);
       mqttPayload = new5.substring(0, new5.length() - 1);
-
       mqttPayloadRecieved = true;
     }
   }
 }
 
-void handleMTTPayload() {
-  if (mqttPayloadRecieved) {
+// Oil level? Er det nok olje?
+// Er det strøm på batteriet?
+//
 
-    if (mqttPayload == "unlock") {
-      unlockBoat();
-    }
-
-    if (mqttPayload == "lock") {
-      lockBoat();
-    }
-
-    mqttPayloadRecieved = false;
-  }
-}
-
-void setUpTimers() {
-  Alarm.timerRepeat(300, measureFuelLevel);
-  Alarm.timerRepeat(260, gps);
-}
+void setUpTimers() { Alarm.timerRepeat(130, publishTelemetry); }
 
 int handleDashboardRequest(String command) {
 
   if (command == "1") {
-    MQTT.sendMQTT("HELLO", "test");
+    MQTT.publish("HELLO", "test");
     // powerOnEngine();
   }
-}
-
-void measureFuelLevel() {
-
-  // Generate random fuel level percent 40-90%
-  fuelLevelPercent = random(40, 90);
-
-  if (!digitalRead(D1)) {
-    // Tank is full!
-
-  } else {
-    // Tank is not full
-  }
-
-  MQTT.sendMQTT(String(fuelLevelPercent), "fuel_level");
-}
-
-void unlockBoat() {
-  locked = false;
-  digitalWrite(D2, HIGH);
-}
-
-void lockBoat() {
-  locked = true;
-  digitalWrite(D2, LOW);
 }

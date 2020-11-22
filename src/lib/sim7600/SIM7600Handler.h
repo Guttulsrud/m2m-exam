@@ -2,22 +2,21 @@
 #define SIM7600Handler_H
 
 #include "../mqtt/MQTTHandler.h"
+#include "../serial/SerialHandler.h"
+
 #include "Particle.h"
 
 class SIM7600Handler {
 public:
   void init();
-  String getModuleResponse();
-  void sendAndReadResponse(String command,
-                           int extraWaitInMillisecondsForResponse = 200);
-  void requestCoordinates();
+  String getPosition();
 
 private:
-  long parse_degrees(char *p);
-
-  String response;
+  long parse_degrees(char *input);
   bool activePositionSignal;
   MQTTHandler MQTT;
+  SerialHandler serial;
+  bool boatOpen = false;
 };
 
 #endif
