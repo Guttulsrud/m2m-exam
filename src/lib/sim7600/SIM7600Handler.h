@@ -13,7 +13,8 @@ public:
 
 private:
   long parse_degrees(char *input);
-  bool activePositionSignal;
+  String position;
+  bool aquiredPosition = false;
   MQTTHandler MQTT;
   SerialHandler serial;
   bool boatOpen = false;

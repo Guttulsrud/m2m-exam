@@ -14,7 +14,7 @@ private:
   // this with a MQTT subscription system, but will hardcode 80 for simplicity
   String uniqueID = String(80);
 
-  String publishTopic = "boats/publish/" + uniqueID + "/boat";
+  String publishTopic = "boats/publish/" + uniqueID;
   String willTopic = "boats/publish/" + uniqueID + "/system/status";
   String willMessage = "lost power";
   String subscribeTopic = "boats/subscribe/" + uniqueID;

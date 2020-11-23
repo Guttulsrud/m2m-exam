@@ -1,5 +1,26 @@
 #include "SIM7600Handler.h"
 
+void SIM7600Handler::init() {
+  Serial1.begin(115200);
+  delay(8000);
+
+  Serial1.println("AT+IPR=19200");
+  delay(1000);
+  Serial1.begin(19200);
+  delay(1000);
+
+  serial.send("AT");
+  serial.send("AT+CPIN=7043");
+  serial.send("AT+CFUN=1");
+  serial.send("AT+CGACT=1,1");
+  serial.send("AT+CGDCONT=1,\"IP\",\"ice.net\"");
+  serial.send("AT+CGPS=1");
+  serial.send("AT+CGREG?");
+  serial.send("AT+NETOPEN");
+  serial.send("AT+IPADDR");
+  MQTT.init();
+}
+
 String SIM7600Handler::getPosition() {
   serial.send("AT+CGPSINFO");
 
@@ -20,37 +41,21 @@ String SIM7600Handler::getPosition() {
   // Serial.println(latit);
 
   if (lat.length() > 6 && lng.length() > 6) {
-    MQTT.publish("false", "position/out_of_range");
+    MQTT.publish("false", "boat/position/out_of_range");
 
-    // Send new
-    return lat + ", " + lng;
+    aquiredPosition = true;
+    position = lat + ", " + lng;
+    return position;
 
   } else {
-    MQTT.publish("true", "position/out_of_range");
+    MQTT.publish("true", "boat/position/out_of_range");
+
+    if (aquiredPosition) {
+      return position;
+    }
 
     return "59923159, 10753234";
   }
-}
-
-void SIM7600Handler::init() {
-  Serial1.begin(115200);
-  delay(8000);
-
-  Serial1.println("AT+IPR=19200");
-  delay(1000);
-  Serial1.begin(19200);
-  delay(1000);
-
-  serial.send("AT");
-  serial.send("AT+CPIN=7043");
-  serial.send("AT+CFUN=1");
-  serial.send("AT+CGACT=1,1");
-  serial.send("AT+CGDCONT=1,\"IP\",\"ice.net\"");
-  serial.send("AT+CGPS=1");
-  serial.send("AT+CGREG?");
-  serial.send("AT+NETOPEN");
-  serial.send("AT+IPADDR");
-  MQTT.init();
 }
 
 long SIM7600Handler::parse_degrees(char *input) {

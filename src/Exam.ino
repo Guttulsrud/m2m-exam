@@ -13,19 +13,17 @@ String mqttPayload;
 bool mqttPayloadRecieved = false;
 
 void setup() {
-
-  Serial.println("Starting...");
-  Particle.function("dashboardrequest", handleDashboardRequest);
   Serial.begin(19200);
   setUpTimers();
-
   boat.init();
   SIM7600.init();
 }
 
 void publishTelemetry() {
-  MQTT.publish(SIM7600.getPosition(), "position");
-  MQTT.publish(String(boat.getFuelLevel()), "fuel_level");
+  MQTT.publish("true", "system/publishing");
+  MQTT.publish(SIM7600.getPosition(), "boat/position");
+  MQTT.publish(String(boat.getFuelLevel()), "boat/fuel_level");
+  MQTT.publish("false", "system/publishing");
 }
 
 void loop() {
@@ -64,12 +62,12 @@ void handleSubscription() {
   if (mqttPayloadRecieved) {
     if (mqttPayload == "unlock") {
       boat.unlockBoat();
-      MQTT.publish("unlocked", "status");
+      MQTT.publish("unlocked", "boat/status");
     }
 
     if (mqttPayload == "lock") {
       boat.lockBoat();
-      MQTT.publish("locked", "status");
+      MQTT.publish("locked", "boat/status");
     }
     mqttPayloadRecieved = false;
   }
@@ -96,12 +94,4 @@ void handleSubscription() {
 // Er det strøm på batteriet?
 //
 
-void setUpTimers() { Alarm.timerRepeat(60, publishTelemetry); }
-
-int handleDashboardRequest(String command) {
-
-  if (command == "1") {
-    MQTT.publish("HELLO", "test");
-    // powerOnEngine();
-  }
-}
+void setUpTimers() { Alarm.timerRepeat(120, publishTelemetry); }
