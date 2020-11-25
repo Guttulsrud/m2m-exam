@@ -27,7 +27,6 @@ void MQTTHandler::init() {
   serial.send("BOAT");
   publish("online", "system/status");
   publish("locked", "boat/status");
-  publish("false", "system/publishing");
 }
 
 void MQTTHandler::publish(String payload, String attribute) {

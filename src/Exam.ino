@@ -20,10 +20,8 @@ void setup() {
 }
 
 void publishTelemetry() {
-  MQTT.publish("true", "system/publishing");
   MQTT.publish(SIM7600.getPosition(), "boat/position");
   MQTT.publish(String(boat.getFuelLevel()), "boat/fuel_level");
-  MQTT.publish("false", "system/publishing");
 }
 
 void loop() {
@@ -32,29 +30,6 @@ void loop() {
     Alarm.delay(1); // Alarms need this to work lmao
 
     handleSubscription();
-
-    /*
-        if (Serial.available() > 0) {
-          Serial.print(">");
-          delay(100);
-          while (Serial.available()) {
-            char ch = Serial.read();
-            Serial.print(ch);
-            Serial1.print(ch);
-          }
-        }
-
-
-            if (Serial1.available() > 0) {
-              Serial.print(":");
-              delay(10);
-              while (Serial1.available()) {
-                char ch = Serial1.read();
-                if (ch) {
-                  Serial.print(ch);
-                }
-              }
-            } */
   }
 }
 
@@ -89,9 +64,5 @@ void handleSubscription() {
     }
   }
 }
-
-// Oil level? Er det nok olje?
-// Er det strøm på batteriet?
-//
 
 void setUpTimers() { Alarm.timerRepeat(120, publishTelemetry); }

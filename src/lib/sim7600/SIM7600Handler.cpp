@@ -37,9 +37,6 @@ String SIM7600Handler::getPosition() {
   String lat = String(parse_degrees(latitude));
   String lng = String(parse_degrees(longitude));
 
-  String latit = lat.substring(0, 3) + "." + lat.substring(3);
-  // Serial.println(latit);
-
   if (lat.length() > 6 && lng.length() > 6) {
     MQTT.publish("false", "boat/position/out_of_range");
 
